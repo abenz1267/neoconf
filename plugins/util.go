@@ -13,24 +13,28 @@ import (
 
 func processInstallCmds(p string) {
 	if hasReadme(p) {
-		cmd := findCmd(p, filepath.Join(p, "README.md"))
-		if cmd == nil {
-			return
-		}
-		o, err := cmd.Output()
+		b, err := ioutil.ReadFile(filepath.Join(p, "README.md"))
 		if err != nil {
-			fmt.Println(err)
+			panic(err)
 		}
-		fmt.Printf("Running post-install command for '%s':\n%s", strings.Replace(filepath.Base(p), "_", "/", 1), string(o))
+
+		runPostInstallCmd(findCmd(p, b), p)
 	}
 }
 
-func findCmd(p, f string) *exec.Cmd {
-	b, err := ioutil.ReadFile(f)
-	if err != nil {
-		panic(err)
+func runPostInstallCmd(cmd *exec.Cmd, p string) {
+	if cmd == nil {
+		return
 	}
 
+	o, err := cmd.Output()
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Printf("Running post-install command for '%s':\n%s", strings.Replace(filepath.Base(p), "_", "/", 1), string(o))
+}
+
+func findCmd(p string, b []byte) *exec.Cmd {
 	re := regexp.MustCompile(`(cd.*&&.)?yarn.install`)
 	res := re.Find(b)
 	if len(res) == 0 {
