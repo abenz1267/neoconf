@@ -1,0 +1,248 @@
+[
+  {
+    "var": "mapleader",
+    "short": "Leader Key",
+    "scope": "g",
+    "type": "string",
+    "default": " "
+  },
+  {
+    "var": "splitright",
+    "short": "Vertical splits will be created right to the current buffer",
+    "scope": "o",
+    "type": "bool",
+    "default": true
+  },
+  {
+    "var": "splitbelow",
+    "short": "Horizontal splits will be created below the current buffer",
+    "scope": "o",
+    "type": "bool",
+    "default": true
+  },
+  {
+    "var": "termguicolors",
+    "short": "Enabled 24-bit RGB",
+    "scope": "o",
+    "type": "bool",
+    "default": true
+  },
+  {
+    "var": "ignorecase",
+    "short": "Case of normal letter is ignored",
+    "scope": "o",
+    "type": "bool",
+    "default": true
+  },
+  {
+    "var": "smartcase",
+    "short": "Overrides 'ignorecase' if search pattern contains uppercase",
+    "scope": "o",
+    "type": "bool",
+    "default": true
+  },
+  {
+    "var": "hlsearch",
+    "short": "Highlights found search pattern",
+    "scope": "o",
+    "type": "bool",
+    "default": true
+  },
+  {
+    "var": "completeopt",
+    "short": "Options for insert-mode completion",
+    "scope": "o",
+    "type": "multistring",
+    "desc": [
+      {
+        "menu": "Use popup menu to show possible completions",
+        "menuone": "Use popup also when there is only one match",
+        "longest": "Only insert longest common text of matches",
+        "preview": "Show extra information about current selection",
+        "noinsert": "Don't insert any text until the user selects a match",
+        "noselect": "Do not select a match from the menu"
+      }
+    ],
+    "default": ["menuone", "noselect"]
+  },
+  {
+    "var": "inccommand",
+    "short": "Show preview for a command incrementally as you type",
+    "scope": "o",
+    "type": "string",
+    "desc": [
+      {
+        "nosplit": "Shows the effects of a command incrementally, as you type",
+        "split": "Also shows partial off-screen results in a preview window",
+        "": ""
+      }
+    ],
+    "default": "nosplit"
+  },
+  {
+    "var": "hidden",
+    "short": "Hide buffers instead of unloading them, when abandoned",
+    "scope": "o",
+    "type": "bool",
+    "default": true
+  },
+  {
+    "var": "",
+    "short": "Backup options",
+    "scope": "o",
+    "type": "stringbackup",
+    "desc": [
+      {
+        "1": { "backup": false, "writebackup": false, "desc": "No backup" },
+        "2": {
+          "backup": false,
+          "writebackup": true,
+          "desc": "Backup current file, delete afterwards"
+        },
+        "3": {
+          "backup": true,
+          "writebackup": false,
+          "desc": "Delete old backup, backup current file"
+        }
+      }
+    ],
+    "default": "1"
+  },
+  {
+    "var": "undofile",
+    "short": "Keep undo-list when unloading buffer",
+    "scope": "o",
+    "type": "bool",
+    "default": true
+  },
+  {
+    "var": "swapfile",
+    "short": "Use swap-file for buffer",
+    "scope": "o",
+    "type": "bool",
+    "default": false
+  },
+  {
+    "var": "showmode",
+    "short": "If in Insert, Replace or Visual mode put a message on the last line",
+    "scope": "o",
+    "type": "bool",
+    "default": false
+  },
+  {
+    "var": "updatetime",
+    "short": "If this many milliseconds nothing is typed the swap file will be written to disk.  Also used for the CursorHold autocommand event.",
+    "scope": "o",
+    "type": "int",
+    "default": 300
+  },
+  {
+    "var": "background",
+    "short": "Color-Theme",
+    "scope": "o",
+    "type": "string",
+    "desc": [
+      {
+        "dark": "dark",
+        "light": "light"
+      }
+    ],
+    "default": "dark"
+  },
+  {
+    "var": "number",
+    "short": "Show line-numbers",
+    "scope": "w",
+    "type": "bool",
+    "default": true
+  },
+  {
+    "var": "relativenumber",
+    "short": "Show relative line-numbers",
+    "scope": "w",
+    "type": "bool",
+    "default": true
+  },
+  {
+    "var": "cursorline",
+    "short": "Highlight line under cursor",
+    "scope": "w",
+    "type": "bool",
+    "default": true
+  },
+  {
+    "var": "signcolumn",
+    "short": "Sign-Column behaviour",
+    "scope": "w",
+    "type": "string",
+    "desc": [
+      {
+        "auto": "only when there is a sign to display",
+        "no": "never",
+        "yes": "always",
+        "number": "display signs in number-column"
+      }
+    ],
+    "default": "yes"
+  },
+  {
+    "var": "expandtab",
+    "short": "Replace tab with spaces",
+    "scope": "b",
+    "type": "bool",
+    "default": true
+  },
+  {
+    "var": "tabstop",
+    "short": "Number of spaces a tab counts for",
+    "scope": "b",
+    "type": "int",
+    "default": 2
+  },
+  {
+    "var": "shiftwidth",
+    "short": "Intendation width",
+    "scope": "b",
+    "type": "int",
+    "default": 2
+  },
+  {
+    "var": "shortmess",
+    "short": "Flags for short-messages",
+    "scope": "g",
+    "type": "stringconcat",
+    "desc": [
+      {
+        "f": "use '(3 of 5)' instead of '(file 3 of 5)'",
+        "i": "use '[noeol]' instead of '[Incomplete last line]'",
+        "l": "use '999L, 888C' instead of '999 lines, 888 characters'",
+        "m": "use '[+]' instead of '[Modified]'",
+        "n": "use '[New]' instead of '[New File]'",
+        "r": "use '[RO]' instead of '[readonly]'",
+        "w": "use '[w]' instead of 'written' for file write message and '[a]' instead of 'appended' for ':w >> file' command",
+        "x": "use '[dos]' instead of '[dos format]', '[unix]' instead of '[unix format]' and '[mac]' instead of '[mac format]'.",
+        "a": "all of the above abbreviations",
+        "o": "overwrite message for writing a file with subsequent message for reading a file (useful for ':wn' or when 'autowrite' on)",
+        "O": "message for reading a file overwrites any previous message. Also for quickfix message (e.g., ':cn').",
+        "s": "don't give 'search hit BOTTOM, continuing at TOP' or 'search hit TOP, continuing at BOTTOM' messages; when using the search count do not show 'W' after the count message (see S below)",
+        "t": "truncate file message at the start if it is too long to fit on the command-line, '<' will appear in the left most column. Ignored in Ex mode.",
+        "T": "truncate other messages in the middle if they are too long to fit on the command line.  '...' will appear in the middle. Ignored in Ex mode.",
+        "W": "don't give 'written' or '[w]' when writing a file",
+        "A": "don't give the 'ATTENTION' message when an existing swap file is found.",
+        "I": "don't give the intro message when starting Vim |:intro|.",
+        "c": "don't give |ins-completion-menu| messages.  For example, '-- XXX completion (YYY)', 'match 1 of 2', 'The only match', 'Pattern not found', 'Back at original', etc.",
+        "q": "use 'recording' instead of 'recording @a'",
+        "F": "don't give the file info when editing a file, like `:silent` was used for the command; note that this also affects messages from autocommands",
+        "S": "do not show search count message when searching, e.g. '[1/5]'"
+      }
+    ],
+    "default": ["f", "i", "l", "n", "x", "t", "T", "o", "O", "F", "c"]
+  },
+  {
+    "var": "yankhighlight",
+    "short": "Yank highlight timeout",
+    "scope": "",
+    "type": "yankhighlight",
+    "default": 500
+  }
+]
