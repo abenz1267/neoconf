@@ -17,10 +17,6 @@ import (
 func Install(p []string) {
 	p = append(p, getMissing()...)
 
-	if len(p) < 1 {
-		return
-	}
-
 	c := make(chan string)
 	defer close(c)
 

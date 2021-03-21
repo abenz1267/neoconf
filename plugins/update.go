@@ -7,6 +7,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/abenz1267/neoconf/structure"
@@ -50,8 +52,12 @@ func filterUpdated(n int, c chan string) []string {
 
 func updatePluginList() {
 	r := findGitRepos()
+	sort.Strings(r)
+	createPluginConfigs(r)
+
 	for k, v := range r {
-		r[k] = strings.Replace(filepath.Base(v), "_", "/", 1)
+		b := filepath.Base(v)
+		r[k] = strings.Replace(b, "_", "/", 1)
 	}
 
 	b, err := json.Marshal(r)
@@ -63,6 +69,60 @@ func updatePluginList() {
 	if err != nil {
 		panic(err)
 	}
+}
+
+func createPluginConfigs(r []string) {
+	for _, v := range r {
+		b := filepath.Base(v)
+		b = strings.Replace(b, ".", "+", -1)
+		f := filepath.Join(structure.Dir.PluginCfg, b+".lua")
+		if !structure.Exists(f) {
+			fmt.Printf("Creating config file for '%s'...\n", strings.Replace(b, "_", "/", 1))
+
+			// findSetupCmd(v)
+			err := ioutil.WriteFile(f, nil, os.ModePerm)
+			if err != nil {
+				panic(err)
+			}
+		}
+	}
+
+	f, err := ioutil.ReadDir(structure.Dir.PluginCfg)
+	if err != nil {
+		panic(err)
+	}
+
+	r = []string{}
+	for _, v := range f {
+		if v.Name() == "init.lua" {
+			continue
+		}
+
+		r = append(r, strings.TrimSuffix(v.Name(), ".lua"))
+	}
+
+	structure.WriteTmpl(structure.Files.PluginsInit, r)
+}
+
+func findSetupCmd(p string) string {
+	if !hasReadme(p) {
+		return ""
+	}
+
+	b, err := ioutil.ReadFile(filepath.Join(p, "README.md"))
+	if err != nil {
+		panic(err)
+	}
+
+	re := regexp.MustCompile(`require.*setup.?[{|(]`)
+	res := re.Find(b)
+
+	re = regexp.MustCompile(`'.*'`)
+	res = re.Find(res)
+	fmt.Println(p)
+	fmt.Println(string(res))
+
+	return ""
 }
 
 func showUpdateInfo(u []string) {

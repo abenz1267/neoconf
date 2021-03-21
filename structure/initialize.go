@@ -10,13 +10,14 @@ import (
 )
 
 type folders struct {
-	nvim    string
-	lua     string
-	custom  string
-	home    string
-	plugins string
-	PStart  string
-	pOpt    string
+	nvim      string
+	lua       string
+	custom    string
+	home      string
+	plugins   string
+	PluginCfg string
+	PStart    string
+	pOpt      string
 }
 
 var Dir = folders{}
@@ -31,21 +32,23 @@ type file struct {
 }
 
 type _files struct {
-	Init       file
-	Editor     file
-	Neoconf    file
-	Custominit file
-	Plugins    file
+	Init        file
+	Editor      file
+	Neoconf     file
+	Custominit  file
+	Plugins     file
+	PluginsInit file
 }
 
 var Files _files
 
 const (
-	Init       = "init"
-	Neoconf    = "neoconf"
-	Plugins    = "plugins"
-	Editor     = "editor"
-	Custominit = "custominit"
+	Init        = "init"
+	Neoconf     = "neoconf"
+	Plugins     = "plugins"
+	Editor      = "editor"
+	Custominit  = "custominit"
+	Pluginsinit = "pluginsinit"
 )
 
 func SetFilesystem(n embed.FS) {
@@ -54,19 +57,21 @@ func SetFilesystem(n embed.FS) {
 
 func SetFiles() {
 	_filepaths = map[string]string{
-		Init:       filepath.Join(Dir.nvim, "init.lua"),
-		Neoconf:    filepath.Join(Dir.nvim, "neoconf.json"),
-		Plugins:    filepath.Join(Dir.nvim, "plugins.json"),
-		Editor:     filepath.Join(Dir.lua, "editor.lua"),
-		Custominit: filepath.Join(Dir.custom, "init.lua"),
+		Init:        filepath.Join(Dir.nvim, "init.lua"),
+		Neoconf:     filepath.Join(Dir.nvim, "neoconf.json"),
+		Plugins:     filepath.Join(Dir.nvim, "plugins.json"),
+		Editor:      filepath.Join(Dir.lua, "editor.lua"),
+		Custominit:  filepath.Join(Dir.custom, "init.lua"),
+		Pluginsinit: filepath.Join(Dir.PluginCfg, "init.lua"),
 	}
 
 	Files = _files{
-		Init:       file{}.new(_filepaths[Init]),
-		Editor:     file{}.new(_filepaths[Editor]),
-		Neoconf:    file{}.new(_filepaths[Neoconf]),
-		Custominit: file{}.new(_filepaths[Custominit]),
-		Plugins:    file{}.new(_filepaths[Plugins]),
+		Init:        file{}.new(_filepaths[Init]),
+		Editor:      file{}.new(_filepaths[Editor]),
+		Neoconf:     file{}.new(_filepaths[Neoconf]),
+		Custominit:  file{}.new(_filepaths[Custominit]),
+		Plugins:     file{}.new(_filepaths[Plugins]),
+		PluginsInit: file{}.new(_filepaths[Pluginsinit]),
 	}
 }
 
@@ -92,6 +97,7 @@ func SetFolders(n, p string) {
 	Dir.pOpt = filepath.Join(Dir.plugins, "opt")
 	Dir.lua = filepath.Join(Dir.nvim, "lua")
 	Dir.custom = filepath.Join(Dir.lua, "custom")
+	Dir.PluginCfg = filepath.Join(Dir.lua, "plugins")
 }
 
 func CheckFolders() {
@@ -124,7 +130,7 @@ func CheckFiles() {
 
 		if !Exists(val.O) {
 			log.Printf("Creating file: %s ", val.O)
-			writeTmpl(val, nil)
+			WriteTmpl(val, nil)
 		}
 	}
 }

@@ -22,7 +22,7 @@ func parseTmpl(s string) *template.Template {
 	return tmpl
 }
 
-func writeTmpl(o file, data interface{}) {
+func WriteTmpl(o file, data interface{}) {
 	file, err := os.Create(o.O)
 	if err != nil {
 		panic(err)
