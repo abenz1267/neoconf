@@ -10,44 +10,44 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/abenz1267/neoconf/structure"
 )
 
+type updated struct {
+	list []string
+	sync.RWMutex
+}
+
+func (u *updated) append(i string) {
+	u.Lock()
+	defer u.Unlock()
+
+	u.list = append(u.list, i)
+}
+
 func Update() {
-	c := make(chan string)
-	defer close(c)
+	items := &updated{}
+	var wg sync.WaitGroup
 
 	r := findGitRepos()
 	if len(r) > 0 {
 		for _, v := range r {
-			go _update(v, c)
+			wg.Add(1)
+			go update(v, items, &wg)
 		}
 	}
 
+	wg.Wait()
+
+	n := len(items.list)
 	updatePluginList()
-	showUpdate(len(r), c)
-}
-
-func showUpdate(n int, c chan string) {
-	u := filterUpdated(n, c)
-
-	if len(u) > 0 && confirmation() {
-		showUpdateInfo(u)
-	}
-}
-
-func filterUpdated(n int, c chan string) []string {
-	u := []string{}
-
-	for i := 0; i < n; i++ {
-		r := <-c
-		if r != "" {
-			u = append(u, r)
+	if n > 0 && confirmation(n) {
+		for _, v := range items.list {
+			showUpdateInfo(v)
 		}
 	}
-
-	return u
 }
 
 func updatePluginList() {
@@ -125,36 +125,36 @@ func findSetupCmd(p string) string {
 	return ""
 }
 
-func showUpdateInfo(u []string) {
-	for _, v := range u {
-		cmd := exec.Command("git", "log", "--pretty=format:- %s", "@{1}..")
-		cmd.Dir = v
-		o, err := cmd.Output()
-		if err == nil {
-			fmt.Printf("%s:\n", filepath.Base(v))
-			fmt.Print(string(o))
-		}
+func showUpdateInfo(v string) {
+	cmd := exec.Command("git", "log", "--pretty=format:- %s", "@{1}..")
+	cmd.Dir = v
+	o, err := cmd.Output()
+	if err == nil {
+		fmt.Printf("%s:\n", strings.Replace(filepath.Base(v), "_", "/", 1))
+		fmt.Println(string(o))
+		fmt.Println()
 	}
 }
 
-func _update(d string, c chan string) {
+func update(d string, items *updated, wg *sync.WaitGroup) {
+	defer wg.Done()
+
 	cmd := exec.Command("git", "pull")
 	cmd.Dir = d
+
 	o, err := cmd.Output()
 	if err != nil {
 		fmt.Printf("Updating '%s': %s", filepath.Base(d), err)
-		c <- ""
 		return
 	}
 
 	res := string(o)
 	if strings.Contains(res, "Already up to date") {
 		fmt.Printf("Updating '%s': %s", strings.Replace(filepath.Base(d), "_", "/", 1), res)
-		c <- ""
 		return
 	}
 
 	processInstallCmds(d)
 
-	c <- d
+	items.append(d)
 }

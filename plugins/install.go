@@ -17,15 +17,9 @@ import (
 func Install(p []string) {
 	p = append(p, getMissing()...)
 
-	c := make(chan string)
-	defer close(c)
-
 	for _, v := range dedup(p) {
-		go cloneOrUpdate(v, c)
+		go clone(v)
 	}
-
-	showUpdate(len(p), c)
-	updatePluginList()
 }
 
 func dedup(in []string) []string {
@@ -104,9 +98,10 @@ func findGitRepos() []string {
 	return res
 }
 
-func confirmation() bool {
+func confirmation(n int) bool {
 	var response string
 
+	fmt.Printf("%d packages have been updated. Show info? (y/n) ", n)
 	_, err := fmt.Scanln(&response)
 	if err != nil {
 		panic(err)
@@ -118,23 +113,13 @@ func confirmation() bool {
 	case "n", "no":
 		return false
 	default:
-		fmt.Println("Sorry, try 'y', 'yes', 'n' or 'no'")
-		return confirmation()
+		fmt.Println("Wrong input.")
+		return confirmation(n)
 	}
 }
 
-func cloneOrUpdate(r string, c chan string) {
-	rn, b, d := parsePluginString(r)
-
-	if structure.Exists(d) {
-		_update(d, c)
-		return
-	}
-
-	_clone(rn, b, d, c)
-}
-
-func _clone(r, b, d string, c chan string) {
+func clone(v string) {
+	r, b, d := parsePluginString(v)
 	if b == "" {
 		b = "master"
 	}
@@ -142,7 +127,6 @@ func _clone(r, b, d string, c chan string) {
 	cmd := exec.Command("git", "clone", "-b", b, "https://github.com/"+r, d)
 	progress(cmd, r)
 	processInstallCmds(d)
-	c <- ""
 }
 
 func progress(cmd *exec.Cmd, p string) {
