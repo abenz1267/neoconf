@@ -2,48 +2,51 @@ package plugins
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/abenz1267/neoconf/structure"
 )
 
+// Install steps:
+// 1. Take input and create slice of plugins
+// 2. Add missing plugins from 'plugins.json'
+// 3. Clone repos
+// 4. Create config file
+// 5. Add plugins to plugins.cfg
 func Install(p []string) {
-	p = append(p, getMissing()...)
+	i := parsePlugins(p)
+	i = append(i, getMissing()...)
 
-	for _, v := range dedup(p) {
-		go clone(v)
+	var wg sync.WaitGroup
+	for _, v := range i {
+		wg.Add(1)
+		go download(v, &wg)
 	}
+
+	wg.Wait()
+	updateList(p)
+
+	for _, v := range i {
+		wg.Add(1)
+		go createCfg(v, &wg)
+	}
+
+	wg.Wait()
+
+	updateCfgInit()
 }
 
-func dedup(in []string) []string {
-	if len(in) > 1 {
-		sort.Strings(in)
-		j := 0
-		for i := 1; i < len(in); i++ {
-			if in[j] == in[i] {
-				continue
-			}
-			j++
-			in[j] = in[i]
-		}
+func getMissing() []plugin {
+	p := getPlugins(getJSON())
 
-		return in[:j+1]
-	}
-	return in
-}
-
-func getMissing() []string {
-	m := []string{}
-	for _, v := range plugins() {
-		_, _, d := parsePluginString(v)
-		if !structure.Exists(d) {
+	m := []plugin{}
+	for _, v := range p {
+		if !structure.Exists(structure.GetPluginDir(string(v.dir))) {
 			m = append(m, v)
 		}
 	}
@@ -51,85 +54,82 @@ func getMissing() []string {
 	return m
 }
 
-func listPlugins() []string {
-	p := plugins()
-	for k, v := range p {
-		fmt.Printf("%d: %s\n", k+1, v)
+func createCfg(p plugin, wg *sync.WaitGroup) {
+	defer wg.Done()
+
+	// if file exists: do nothing, just create new
+	d := structure.GetPluginConf(string(p.cfg))
+
+	if structure.Exists(d) {
+		fmt.Printf("Installing '%s': config exists.\n", p.repo)
+		return
 	}
 
-	return p
-}
-
-func plugins() []string {
-	f, err := ioutil.ReadFile(structure.Files.Plugins.O)
+	err := os.WriteFile(d, nil, os.ModePerm)
 	if err != nil {
 		panic(err)
 	}
 
-	p := []string{}
-	err = json.Unmarshal(f, &p)
-	if err != nil {
-		panic(err)
-	}
-
-	return p
+	fmt.Printf("Installing '%s': config created.\n", p.repo)
 }
 
-func findGitRepos() []string {
-	res := []string{}
+func updateList(i []string) {
+	e := getJSON()
+	e = append(e, i...)
 
-	s := "/.git"
-	err := filepath.Walk(structure.Dir.PStart,
-		func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
+	e = deduplicate(e)
 
-			if info.IsDir() && strings.HasSuffix(path, s) {
-				res = append(res, strings.TrimSuffix(path, s))
-			}
-
-			return nil
-		})
-	if err != nil {
-		panic(err)
-	}
-
-	return res
+	writeList(getPlugins(e))
 }
 
-func confirmation(n int) bool {
-	var response string
-
-	fmt.Printf("%d packages have been updated. Show info? (y/n) ", n)
-	_, err := fmt.Scanln(&response)
-	if err != nil {
-		panic(err)
+func deduplicate(in []string) []string {
+	sort.Strings(in)
+	j := 0
+	for i := 1; i < len(in); i++ {
+		if in[j] == in[i] {
+			continue
+		}
+		j++
+		in[j] = in[i]
 	}
-
-	switch strings.ToLower(response) {
-	case "y", "yes":
-		return true
-	case "n", "no":
-		return false
-	default:
-		fmt.Println("Wrong input.")
-		return confirmation(n)
-	}
+	result := in[:j+1]
+	return result
 }
 
-func clone(v string) {
-	r, b, d := parsePluginString(v)
-	if b == "" {
-		b = "master"
+func parsePlugins(i []string) []plugin {
+	o := []plugin{}
+
+	for _, v := range i {
+		n := plugin{}
+		n.ParseRepo(v)
+
+		o = append(o, n)
 	}
 
-	cmd := exec.Command("git", "clone", "-b", b, "https://github.com/"+r, d)
-	progress(cmd, r)
-	processInstallCmds(d)
+	return o
 }
 
-func progress(cmd *exec.Cmd, p string) {
+func download(p plugin, wg *sync.WaitGroup) {
+	defer wg.Done()
+	if p.branch == "" {
+		p.branch = "master"
+	}
+
+	dir := structure.GetPluginDir(string(p.repo.dir()))
+	if structure.Exists(dir) {
+		err := os.RemoveAll(dir)
+		if err != nil {
+			panic(err)
+		}
+	}
+
+	cmd := exec.Command("git", "clone", "-b", p.branch, "https://github.com/"+string(p.repo), dir)
+	cmd.Dir = structure.Dir.PStart
+	showProgress(cmd, p.repo)
+	processInstallCmds(p)
+}
+
+func showProgress(cmd *exec.Cmd, r repo) {
 	stderr, err := cmd.StderrPipe()
 	if err != nil {
 		panic(err)
@@ -142,21 +142,29 @@ func progress(cmd *exec.Cmd, p string) {
 	scanner := bufio.NewScanner(stderr)
 
 	for scanner.Scan() {
-		r := scanner.Text()
-		if strings.Contains(r, "master not found") {
-			cmd.Args[3] = "main"
-			i := len(cmd.Args) - 1
-			err := os.RemoveAll(cmd.Args[i])
-			if err != nil {
-				panic(err)
-			}
-			cmd.Args[i] = strings.Replace(cmd.Args[i], "master", "main", 1)
-			fmt.Printf("Installing '%s': %s\n", p, "Trying branch 'main'")
-			progress(cloneCMD(cmd), p)
+		t := scanner.Text()
+		if switchBranch(t, cmd, r) {
 			break
 		}
-		fmt.Printf("Installing '%s': %s\n", p, scanner.Text())
+		fmt.Printf("Installing '%s': %s\n", r, scanner.Text())
 	}
+}
+
+func switchBranch(t string, cmd *exec.Cmd, r repo) bool {
+	if strings.Contains(t, "master not found") {
+		cmd.Args[3] = "main"
+
+		err := os.RemoveAll(cmd.Args[len(cmd.Args)-1])
+		if err != nil {
+			panic(err)
+		}
+
+		fmt.Printf("Installing '%s': %s\n", r, "Trying branch 'main'")
+		showProgress(cloneCMD(cmd), r)
+		return true
+	}
+
+	return false
 }
 
 func cloneCMD(o *exec.Cmd) *exec.Cmd {

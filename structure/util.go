@@ -42,3 +42,11 @@ func Exists(d string) bool {
 
 	return true
 }
+
+func GetPluginDir(d string) string {
+	return filepath.Join(Dir.PStart, d)
+}
+
+func GetPluginConf(cfg string) string {
+	return filepath.Join(Dir.PluginCfg, cfg) + ".lua"
+}

@@ -33,12 +33,12 @@ Barebone management of plugins is in place! Not defining a branch explicitly -> 
 
 ### Commands:
 
-1. `install <plugin1> <plugin2> ...`: installs all plugins provided. Also install missing plugins from "plugins.json". Creates plugin configuration-file under `lua/plugins`
+1. `install <plugin1> <plugin2> ...`: installs all plugins provided and all missing plugins from 'plugins.json'. Creates plugin configuration-file under `lua/plugins`
    1. Branch: `glepnir/galaxyline.nvim@SOMEBRANCH`
    2. ....what about post-install hooks, bro? This is a bit sub-optimal at the moment: neoconf will look for a `cd DIR && yarn install` or `yarn install` command in the repository's README file. I'd definitely prefer a `config.json` file with meta-data to be parsed, but this would require work from maintainers.
 2. `update`: updates all plugins
 3. `clean`: removes plugins not found in "plugins.json", removes `<plugin>.lua` from `lua/plugins`
-4. `remove`: this will list all plugins installed and prompt you to enter the index of the plugins you want to remove. Does not remove plugin config.
+4. `remove`: this will list all plugins installed and prompt you to enter the index of the plugins you want to remove. Does not remove plugin config. Automatically.
 
 ## Todo
 
