@@ -6,12 +6,24 @@ import (
 	"os"
 	"strconv"
 	"strings"
+
+	"github.com/abenz1267/neoconf/structure"
 )
 
+// RemoveN steps:
+// 1. List installed plugins
+// 2. Prompt for number(s) of plugin(s) to remove
+// 3. Remove dir(s)
+// 4. Update plugins.json
 func RemoveN() {
-	p := listPlugins()
+	p := getPlugins(getJSON())
 	if len(p) < 1 {
+		fmt.Println("No plugins installed")
 		return
+	}
+
+	for k, v := range p {
+		fmt.Printf("%d: %s\n", k+1, v.repo)
 	}
 
 	fmt.Print("Enter a number: ")
@@ -36,12 +48,16 @@ func RemoveN() {
 			continue
 		}
 
-		_, _, d := parsePluginString(p[i-1])
-		err = os.RemoveAll(d)
+		err = os.RemoveAll(structure.GetPluginDir(string(p[i-1].dir)))
+		p[i-1].repo = ""
 		if err != nil {
 			panic(err)
 		}
 	}
 
-	updatePluginList()
+	writeList(p)
+
+	if confirmation("Perform 'clean' (remove deleted config files)?") {
+		Clean()
+	}
 }

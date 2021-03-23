@@ -1,8 +1,10 @@
 package plugins
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
@@ -11,18 +13,19 @@ import (
 	"github.com/abenz1267/neoconf/structure"
 )
 
-func processInstallCmds(p string) {
-	if hasReadme(p) {
-		b, err := ioutil.ReadFile(filepath.Join(p, "README.md"))
+func processInstallCmds(p plugin) {
+	d := structure.GetPluginDir(string(p.dir))
+	if hasReadme(d) {
+		b, err := ioutil.ReadFile(filepath.Join(d, "README.md"))
 		if err != nil {
 			panic(err)
 		}
 
-		runPostInstallCmd(findCmd(p, b), p)
+		runPostInstallCmd(findCmd(p.dir, b), p.repo)
 	}
 }
 
-func runPostInstallCmd(cmd *exec.Cmd, p string) {
+func runPostInstallCmd(cmd *exec.Cmd, r repo) {
 	if cmd == nil {
 		return
 	}
@@ -31,10 +34,10 @@ func runPostInstallCmd(cmd *exec.Cmd, p string) {
 	if err != nil {
 		fmt.Println(err)
 	}
-	fmt.Printf("Running post-install command for '%s':\n%s", strings.Replace(filepath.Base(p), "_", "/", 1), string(o))
+	fmt.Printf("Running post-install command for '%s':\n%s", r, string(o))
 }
 
-func findCmd(p string, b []byte) *exec.Cmd {
+func findCmd(d dir, b []byte) *exec.Cmd {
 	re := regexp.MustCompile(`(cd.*&&.)?yarn.install`)
 	res := re.Find(b)
 	if len(res) == 0 {
@@ -49,26 +52,13 @@ func findCmd(p string, b []byte) *exec.Cmd {
 	}
 
 	cmd := exec.Command("yarn", "install")
-	cmd.Dir = filepath.Join(p, dir)
+	cmd.Dir = filepath.Join(structure.GetPluginDir(string(d)), dir)
 
 	return cmd
 }
 
-func parsePluginString(ro string) (r, b, d string) {
-	s := strings.Split(ro, "@")
-
-	if len(s) > 1 {
-		b = s[1]
-	}
-
-	r = s[0]
-	d = filepath.Join(structure.Dir.PStart, strings.Replace(ro, "/", "_", 1))
-
-	return r, b, d
-}
-
-func hasReadme(r string) bool {
-	files, err := ioutil.ReadDir(r)
+func hasReadme(d string) bool {
+	files, err := ioutil.ReadDir(string(d))
 	if err != nil {
 		panic(err)
 	}
@@ -80,4 +70,49 @@ func hasReadme(r string) bool {
 	}
 
 	return false
+}
+
+func writeList(p []plugin) {
+	r := []string{}
+
+	for _, v := range p {
+		if v.repo == "" {
+			continue
+		}
+
+		pluginString := string(v.repo)
+		if v.branch != "" {
+			pluginString = strings.Join([]string{string(v.repo), v.branch}, "@")
+		}
+
+		r = append(r, pluginString)
+	}
+
+	b, err := json.Marshal(r)
+	if err != nil {
+		panic(err)
+	}
+
+	err = ioutil.WriteFile(structure.Files.Plugins.O, b, os.ModePerm)
+	if err != nil {
+		panic(err)
+	}
+}
+
+func updateCfgInit() {
+	d, err := ioutil.ReadDir(structure.Dir.PluginCfg)
+	if err != nil {
+		panic(err)
+	}
+
+	f := []string{}
+	for _, v := range d {
+		if v.Name() == "init.lua" {
+			continue
+		}
+
+		f = append(f, strings.TrimSuffix(v.Name(), ".lua"))
+	}
+
+	structure.WriteTmpl(structure.Files.PluginsInit, f)
 }

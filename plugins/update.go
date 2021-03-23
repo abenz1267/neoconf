@@ -1,14 +1,11 @@
 package plugins
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"regexp"
-	"sort"
 	"strings"
 	"sync"
 
@@ -16,25 +13,33 @@ import (
 )
 
 type updated struct {
-	list []string
+	list []dir
 	sync.RWMutex
 }
 
-func (u *updated) append(i string) {
+func (u *updated) append(d dir) {
 	u.Lock()
 	defer u.Unlock()
 
-	u.list = append(u.list, i)
+	u.list = append(u.list, d)
 }
 
 func Update() {
 	items := &updated{}
 	var wg sync.WaitGroup
 
-	r := findGitRepos()
-	if len(r) > 0 {
-		for _, v := range r {
+	i := getJSON()
+
+	p := getPlugins(i)
+	if len(p) > 0 {
+		for _, v := range p {
 			wg.Add(1)
+
+			if !structure.Exists(string(v.dir)) {
+				wg.Done()
+				continue
+			}
+
 			go update(v, items, &wg)
 		}
 	}
@@ -42,32 +47,10 @@ func Update() {
 	wg.Wait()
 
 	n := len(items.list)
-	updatePluginList()
-	if n > 0 && confirmation(n) {
-		for _, v := range items.list {
-			showUpdateInfo(v)
+	if n > 0 && confirmation(fmt.Sprintf("%d packages have been updated. Show info?", n)) {
+		for _, dir := range items.list {
+			showUpdateInfo(dir)
 		}
-	}
-}
-
-func updatePluginList() {
-	r := findGitRepos()
-	sort.Strings(r)
-	createPluginConfigs(r)
-
-	for k, v := range r {
-		b := filepath.Base(v)
-		r[k] = strings.Replace(b, "_", "/", 1)
-	}
-
-	b, err := json.Marshal(r)
-	if err != nil {
-		panic(err)
-	}
-
-	err = ioutil.WriteFile(structure.Files.Plugins.O, b, os.ModePerm)
-	if err != nil {
-		panic(err)
 	}
 }
 
@@ -104,57 +87,57 @@ func createPluginConfigs(r []string) {
 	structure.WriteTmpl(structure.Files.PluginsInit, r)
 }
 
-func findSetupCmd(p string) string {
-	if !hasReadme(p) {
-		return ""
-	}
-
-	b, err := ioutil.ReadFile(filepath.Join(p, "README.md"))
-	if err != nil {
-		panic(err)
-	}
-
-	re := regexp.MustCompile(`require.*setup.?[{|(]`)
-	res := re.Find(b)
-
-	re = regexp.MustCompile(`'.*'`)
-	res = re.Find(res)
-	fmt.Println(p)
-	fmt.Println(string(res))
-
-	return ""
-}
-
-func showUpdateInfo(v string) {
+func showUpdateInfo(d dir) {
 	cmd := exec.Command("git", "log", "--pretty=format:- %s", "@{1}..")
-	cmd.Dir = v
+	cmd.Dir = string(d)
 	o, err := cmd.Output()
 	if err == nil {
-		fmt.Printf("%s:\n", strings.Replace(filepath.Base(v), "_", "/", 1))
+		fmt.Printf("%s:\n", strings.Replace(filepath.Base(cmd.Dir), "_", "/", 1))
 		fmt.Println(string(o))
 		fmt.Println()
 	}
 }
 
-func update(d string, items *updated, wg *sync.WaitGroup) {
+func update(p plugin, items *updated, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	cmd := exec.Command("git", "pull")
-	cmd.Dir = d
+	cmd.Dir = string(p.dir)
 
+	b := filepath.Base(cmd.Dir)
 	o, err := cmd.Output()
 	if err != nil {
-		fmt.Printf("Updating '%s': %s", filepath.Base(d), err)
+		fmt.Printf("Updating '%s': %s", b, err)
 		return
 	}
 
 	res := string(o)
 	if strings.Contains(res, "Already up to date") {
-		fmt.Printf("Updating '%s': %s", strings.Replace(filepath.Base(d), "_", "/", 1), res)
+		fmt.Printf("Updating '%s': %s", strings.Replace(b, "_", "/", 1), res)
 		return
 	}
 
-	processInstallCmds(d)
+	processInstallCmds(p)
 
-	items.append(d)
+	items.append(p.dir)
+}
+
+func confirmation(msg string) bool {
+	var response string
+
+	fmt.Printf("%s (y/n) ", msg)
+	_, err := fmt.Scanln(&response)
+	if err != nil {
+		panic(err)
+	}
+
+	switch strings.ToLower(response) {
+	case "y", "yes":
+		return true
+	case "n", "no":
+		return false
+	default:
+		fmt.Println("Wrong input.")
+		return confirmation(msg)
+	}
 }
