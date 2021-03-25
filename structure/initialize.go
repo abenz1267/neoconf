@@ -77,6 +77,7 @@ func SetFiles() {
 
 func SetFolders(n, p string) {
 	var err error
+
 	Dir.home, err = os.UserHomeDir()
 	if err != nil {
 		panic(err)
@@ -108,6 +109,7 @@ func CheckFolders() {
 		d := s.Field(i).String()
 		if !Exists(d) {
 			log.Printf("Creating folder: %s ", d)
+
 			err := os.Mkdir(d, os.ModePerm)
 			if err != nil {
 				panic(err)

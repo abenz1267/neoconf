@@ -1,3 +1,4 @@
+// Package plugins provices functionality to handle neovim plugins. Install, remove, update and simply list packages.
 package plugins
 
 import (
@@ -23,16 +24,20 @@ func Install(p []string) {
 	i = append(i, getMissing()...)
 
 	var wg sync.WaitGroup
+
+	toAdd := len(i)
+	wg.Add(toAdd)
+
 	for _, v := range i {
-		wg.Add(1)
 		go download(v, &wg)
 	}
 
 	wg.Wait()
 	updateList(p)
 
+	wg.Add(toAdd)
+
 	for _, v := range i {
-		wg.Add(1)
 		go createCfg(v, &wg)
 	}
 
@@ -45,6 +50,7 @@ func getMissing() []plugin {
 	p := getPlugins(getJSON())
 
 	m := []plugin{}
+
 	for _, v := range p {
 		if !structure.Exists(structure.GetPluginDir(string(v.dir))) {
 			m = append(m, v)
@@ -83,16 +89,22 @@ func updateList(i []string) {
 }
 
 func deduplicate(in []string) []string {
-	sort.Strings(in)
 	j := 0
+
+	sort.Strings(in)
+
 	for i := 1; i < len(in); i++ {
 		if in[j] == in[i] {
 			continue
 		}
+
 		j++
+
 		in[j] = in[i]
 	}
+
 	result := in[:j+1]
+
 	return result
 }
 
@@ -111,6 +123,7 @@ func parsePlugins(i []string) []plugin {
 
 func download(p plugin, wg *sync.WaitGroup) {
 	defer wg.Done()
+
 	if p.branch == "" {
 		p.branch = "master"
 	}
@@ -123,7 +136,7 @@ func download(p plugin, wg *sync.WaitGroup) {
 		}
 	}
 
-	cmd := exec.Command("git", "clone", "-b", p.branch, "https://github.com/"+string(p.repo), dir)
+	cmd := exec.Command("git", "clone", "-b", p.branch, "https://github.com/"+string(p.repo), dir) //nolint:gosec
 	cmd.Dir = structure.Dir.PStart
 	showProgress(cmd, p.repo)
 	processInstallCmds(p)
@@ -146,6 +159,7 @@ func showProgress(cmd *exec.Cmd, r repo) {
 		if switchBranch(t, cmd, r) {
 			break
 		}
+
 		fmt.Printf("Installing '%s': %s\n", r, scanner.Text())
 	}
 }
@@ -161,6 +175,7 @@ func switchBranch(t string, cmd *exec.Cmd, r repo) bool {
 
 		fmt.Printf("Installing '%s': %s\n", r, "Trying branch 'main'")
 		showProgress(cloneCMD(cmd), r)
+
 		return true
 	}
 
@@ -168,7 +183,7 @@ func switchBranch(t string, cmd *exec.Cmd, r repo) bool {
 }
 
 func cloneCMD(o *exec.Cmd) *exec.Cmd {
-	cmd := exec.Command("git", o.Args[1:]...)
+	cmd := exec.Command("git", o.Args[1:]...) //nolint:gosec
 	cmd.Dir = o.Dir
 
 	return cmd

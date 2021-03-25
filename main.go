@@ -13,6 +13,8 @@ import (
 //go:embed files/**
 var f embed.FS
 
+const minLength = 2
+
 func main() {
 	checkGit()
 	checkYarn()
@@ -21,7 +23,7 @@ func main() {
 	structure.SetFolders("", "")
 	structure.SetFiles()
 
-	if len(os.Args) < 2 {
+	if len(os.Args) < minLength {
 		// default action
 		return
 	}
@@ -47,11 +49,13 @@ func main() {
 	}
 }
 
+const status = 1
+
 func checkGit() {
 	_, err := exec.LookPath("git")
 	if err != nil {
 		fmt.Println("Missing 'git'. Needed to clone and update plugins.")
-		os.Exit(1)
+		os.Exit(status)
 	}
 }
 
@@ -59,6 +63,6 @@ func checkYarn() {
 	_, err := exec.LookPath("yarn")
 	if err != nil {
 		fmt.Println("Missing 'yarn'. Needed for some post-install commands.")
-		os.Exit(1)
+		os.Exit(status)
 	}
 }

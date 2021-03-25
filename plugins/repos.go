@@ -42,12 +42,14 @@ func getJSON() []string {
 	}
 
 	p := []string{}
+
 	err = json.Unmarshal(f, &p)
 	if err != nil {
 		panic(err)
 	}
 
 	sort.Strings(p)
+
 	return p
 }
 
@@ -83,10 +85,12 @@ func (p *plugin) ParseRepo(i string) {
 	p.branch = b
 }
 
-func parsePluginString(i string) (r repo, b string) {
-	s := strings.Split(string(i), "@")
+const minSplit = 1
 
-	if len(s) > 1 {
+func parsePluginString(i string) (r repo, b string) {
+	s := strings.Split(i, "@")
+
+	if len(s) > minSplit {
 		b = s[1]
 	}
 

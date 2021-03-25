@@ -24,9 +24,11 @@ func Clean() {
 	d := []string{}
 
 	p := getPlugins(getJSON())
+
 	for _, c := range f {
 		exists := false
 		n := c.Name()
+
 		if n == "init.lua" {
 			continue
 		}

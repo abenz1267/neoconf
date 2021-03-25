@@ -23,16 +23,19 @@ func (u *updated) append(d dir) {
 }
 
 func Update() {
-	items := &updated{}
 	var wg sync.WaitGroup
+
+	items := &updated{}
 
 	i := getJSON()
 
 	p := getPlugins(i)
-	if len(p) > 0 {
-		for _, v := range p {
-			wg.Add(1)
+	l := len(p)
 
+	if l > 0 {
+		wg.Add(l)
+
+		for _, v := range p {
 			if !structure.Exists(structure.GetPluginDir(string(v.dir))) {
 				wg.Done()
 				continue
@@ -55,6 +58,7 @@ func Update() {
 func showUpdateInfo(d dir) {
 	cmd := exec.Command("git", "log", "--pretty=format:- %s", "@{1}..")
 	cmd.Dir = structure.GetPluginDir(string(d))
+
 	o, err := cmd.Output()
 	if err == nil {
 		fmt.Printf("%s:\n", strings.Replace(filepath.Base(cmd.Dir), "_", "/", 1))
@@ -70,6 +74,7 @@ func update(p plugin, items *updated, wg *sync.WaitGroup) {
 	cmd.Dir = structure.GetPluginDir(string(p.dir))
 
 	b := filepath.Base(cmd.Dir)
+
 	o, err := cmd.Output()
 	if err != nil {
 		fmt.Printf("Updating '%s': %s", b, err)

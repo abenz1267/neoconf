@@ -14,7 +14,9 @@ import (
 // 3. Remove dir(s)
 // 4. Update plugins.json
 func RemoveN() {
-	p := List()
+	List()
+
+	p := getPlugins(getJSON())
 
 	for _, v := range getSelections() {
 		i, err := strconv.Atoi(v)
@@ -29,6 +31,7 @@ func RemoveN() {
 
 		err = os.RemoveAll(structure.GetPluginDir(string(p[i-1].dir)))
 		p[i-1].repo = ""
+
 		if err != nil {
 			panic(err)
 		}

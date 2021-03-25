@@ -35,6 +35,7 @@ func runPostInstallCmd(cmd *exec.Cmd, r repo) {
 	if err != nil {
 		fmt.Println(err)
 	}
+
 	fmt.Printf("Running post-install command for '%s':\n%s", r, string(o))
 }
 
@@ -59,7 +60,7 @@ func findCmd(d dir, b []byte) *exec.Cmd {
 }
 
 func hasReadme(d string) bool {
-	files, err := ioutil.ReadDir(string(d))
+	files, err := ioutil.ReadDir(d)
 	if err != nil {
 		panic(err)
 	}
@@ -107,6 +108,7 @@ func updateCfgInit() {
 	}
 
 	f := []string{}
+
 	for _, v := range d {
 		if v.Name() == "init.lua" {
 			continue
@@ -138,18 +140,16 @@ func confirmation(msg string) bool {
 	}
 }
 
-func List() []plugin {
+func List() {
 	p := getPlugins(getJSON())
 	if len(p) < 1 {
 		fmt.Println("No plugins installed")
-		return p
+		return
 	}
 
 	for k, v := range p {
 		fmt.Printf("%d: %s\n", k+1, v.repo)
 	}
-
-	return p
 }
 
 func getSelections() []string {

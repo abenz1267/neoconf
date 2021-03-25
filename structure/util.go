@@ -1,3 +1,4 @@
+// Package structure provides checks and functionality to handle neoconf files and folders
 package structure
 
 import (
@@ -14,6 +15,7 @@ func parseTmpl(s string) *template.Template {
 
 	b := filepath.Base(s) + ".tmpl"
 	t := strings.TrimPrefix(s, Dir.nvim)
+
 	tmpl, err := template.New(b).ParseFS(f, filepath.Join("files", "nvim", t+".tmpl"))
 	if err != nil {
 		panic(err)
