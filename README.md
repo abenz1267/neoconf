@@ -1,3 +1,8 @@
+[![made-with-Go](https://img.shields.io/badge/Made%20with-Go-1f425f.svg)](http://golang.org)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://GitHub.com/Naereen/StrapDown.js/graphs/commit-activity)
+[![GitHub go.mod Go version of a Go module](https://img.shields.io/github/go-mod/go-version/abenz1267/neoconf)](https://github.com/abenz1267/neoconf)
+[![GoReportCard example](https://goreportcard.com/badge/github.com/abenz1267/neoconf)](https://goreportcard.com/report/github.com/abenz1267/neoconf)
+
 # Neoconf - Neovim Config-Tool
 
 Neoconf is a CLI-Tool to help configuring [Neovim](https://github.com/neovim/neovim).
