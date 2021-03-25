@@ -53,23 +53,23 @@ func getJSON() []string {
 	return p
 }
 
-func (i cfg) dir() dir {
+func (i cfg) dir() dir { //nolint
 	return dir(strings.Replace(string(i), "+", ".", -1))
 }
 
-func (i cfg) repo() repo {
+func (i cfg) repo() repo { //nolint
 	return i.dir().repo()
 }
 
-func (i dir) cfg() cfg {
+func (i dir) cfg() cfg { //nolint
 	return cfg(strings.Replace(string(i), ".", "+", -1))
 }
 
-func (i dir) repo() repo {
+func (i dir) repo() repo { //nolint
 	return repo(strings.Replace(string(i), "_", "/", 1))
 }
 
-func (i repo) cfg() cfg {
+func (i repo) cfg() cfg { //nolint
 	return i.dir().cfg()
 }
 

@@ -41,6 +41,7 @@ func runPostInstallCmd(cmd *exec.Cmd, r repo) {
 
 func findCmd(d dir, b []byte) *exec.Cmd {
 	re := regexp.MustCompile(`(cd.*&&.)?yarn.install`)
+
 	res := re.Find(b)
 	if len(res) == 0 {
 		return nil
@@ -124,6 +125,7 @@ func confirmation(msg string) bool {
 	var response string
 
 	fmt.Printf("%s (y/n) ", msg)
+
 	_, err := fmt.Scanln(&response)
 	if err != nil {
 		panic(err)
@@ -140,15 +142,21 @@ func confirmation(msg string) bool {
 	}
 }
 
+const (
+	minL   = 1
+	offset = 1
+)
+
 func List() {
 	p := getPlugins(getJSON())
-	if len(p) < 1 {
+
+	if len(p) < minL {
 		fmt.Println("No plugins installed")
 		return
 	}
 
 	for k, v := range p {
-		fmt.Printf("%d: %s\n", k+1, v.repo)
+		fmt.Printf("%d: %s\n", k+offset, v.repo)
 	}
 }
 
@@ -156,11 +164,13 @@ func getSelections() []string {
 	fmt.Print("Enter a number: ")
 
 	reader := bufio.NewReader(os.Stdin)
+
 	s, err := reader.ReadString('\n')
 	if err != nil {
 		panic(err)
 	}
 
 	s = strings.TrimSpace(s)
+
 	return strings.Split(s, " ")
 }
