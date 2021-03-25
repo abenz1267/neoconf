@@ -1,6 +1,7 @@
 package plugins
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -135,4 +136,31 @@ func confirmation(msg string) bool {
 		fmt.Println("Wrong input.")
 		return confirmation(msg)
 	}
+}
+
+func List() []plugin {
+	p := getPlugins(getJSON())
+	if len(p) < 1 {
+		fmt.Println("No plugins installed")
+		return p
+	}
+
+	for k, v := range p {
+		fmt.Printf("%d: %s\n", k+1, v.repo)
+	}
+
+	return p
+}
+
+func getSelections() []string {
+	fmt.Print("Enter a number: ")
+
+	reader := bufio.NewReader(os.Stdin)
+	s, err := reader.ReadString('\n')
+	if err != nil {
+		panic(err)
+	}
+
+	s = strings.TrimSpace(s)
+	return strings.Split(s, " ")
 }

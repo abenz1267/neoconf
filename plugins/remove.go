@@ -1,11 +1,9 @@
 package plugins
 
 import (
-	"bufio"
 	"fmt"
 	"os"
 	"strconv"
-	"strings"
 
 	"github.com/abenz1267/neoconf/structure"
 )
@@ -16,28 +14,9 @@ import (
 // 3. Remove dir(s)
 // 4. Update plugins.json
 func RemoveN() {
-	p := getPlugins(getJSON())
-	if len(p) < 1 {
-		fmt.Println("No plugins installed")
-		return
-	}
+	p := List()
 
-	for k, v := range p {
-		fmt.Printf("%d: %s\n", k+1, v.repo)
-	}
-
-	fmt.Print("Enter a number: ")
-
-	reader := bufio.NewReader(os.Stdin)
-	s, err := reader.ReadString('\n')
-	if err != nil {
-		panic(err)
-	}
-
-	s = strings.TrimSpace(s)
-	r := strings.Split(s, " ")
-
-	for _, v := range r {
+	for _, v := range getSelections() {
 		i, err := strconv.Atoi(v)
 		if err != nil {
 			fmt.Printf("Couldn't process '%s'\n", v)

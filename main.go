@@ -39,6 +39,8 @@ func main() {
 		plugins.RemoveN()
 	case "clean":
 		plugins.Clean()
+	case "list":
+		plugins.List()
 	default:
 		fmt.Println("unknown command")
 		return
